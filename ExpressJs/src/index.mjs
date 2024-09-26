@@ -1,8 +1,10 @@
 import express from 'express';
+import Joi from "joi"
+
 
 const app = express()
 
-const test = process.env.test
+app.use(express.json())
 
 const PORT = process.env.PORT || 3000
 
@@ -10,36 +12,38 @@ app.listen(PORT, () => {
     console.log(`Demarre sur le port : ${PORT}`)
 })
 
-
-const mockusers = [
-    {id : 1, Nom: "yacine",NomAfficher : "Yacine"},
-    {id : 2, Nom: "yacine",NomAfficher : "1"},
-    {id : 3, Nom: "yacine",NomAfficher : "2"},
+const users = [
+    {id : 1, Nom: "yacine"},
+    {id : 2, Nom: "yacine"},
+    {id : 3, Nom: "yacine"},
 ]
 
-app.get("/Utilisateurs", (req,res) => {
-    res.send("Bienvenue a toi Utilisateur")
+
+
+app.get("/api/utilisateurs", (req,res) => {
+    res.send(users)
 })
 
-app.get("/Compte", (req,res) => {
-    res.status(201).send({ Salut : " Toi "})
+app.post('/api/utilisateurs', (req, res) => {
+    const schema = Joi.object({
+        nom: Joi.string().min(3).required()
+    });
+
+    const validationResult = schema.validate(req.body);
+
+    if (validationResult.error) {
+        return res.status(400).send("Rentrez un nom valide");
+    }
+
+   
+    const user = {
+        id: users.length + 1,
+        nom: req.body.nom  
+    };
+    users.push(user);
+    res.send(user);
+});
+
+app.get("/", (req,res) => {
+    res.send("Bienvenue!")
 })
-
-app.get("/api/users", (req,res) => {
-res.send(mockusers)
-})
-
-app.get('/api/users/:id' ,(req,res) => {
-console.log(req.params)
-const parsedId = parseInt(req.params.id)
-console.log(parsedId)
-
-if (isNaN(parsedId))
-    return res.status(400).send({msg: " Id invalide "})
-
-const findUsers = mockusers.find((user) => user.id === parsedId)
-
-if (!findUsers) return res.sendStatus(404)
-    else {res.send(findUsers)} 
-})
-
