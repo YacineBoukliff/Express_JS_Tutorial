@@ -1,18 +1,27 @@
 import express from 'express';
 import Joi from "joi"
+import helmet from "helmet"
+import morgan from "morgan"
 import { log } from './logger.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+const app = express()
+
+if(app.get('env') === 'development'){
+    app.use(morgan("tiny"));
+    console.log("Morgan activé")
+}
+
+console.log("Environnement actuel :", app.get('env'));
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-
-const app = express()
-
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
-
+app.use(helmet())
+app.use(morgan("tiny"));
 
 const publicPath = path.join(__dirname, '..', 'public');
 app.use(express.static(publicPath));
