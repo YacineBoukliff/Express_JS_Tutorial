@@ -1,9 +1,29 @@
 import express from 'express';
 import Joi from "joi"
+import { log } from './logger.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 const app = express()
 
 app.use(express.json())
+app.use(express.urlencoded({ extended: true }));
+
+
+const publicPath = path.join(__dirname, '..', 'public');
+app.use(express.static(publicPath));
+
+
+app.use(log)
+
+app.use(function (req,res,next ) {
+    console.log("Authentification")
+    next()
+})
 
 const port = process.env.PORT || 3000
 
@@ -49,7 +69,7 @@ app.post('/api/utilisateurs', (req, res) => {
    
     const user = {
         id: users.length + 1,
-        nom: req.body.Nom  
+        nom: req.body.nom  
     };
     users.push(user);
     res.send(user);
@@ -57,13 +77,11 @@ app.post('/api/utilisateurs', (req, res) => {
 
 
 app.put('/api/utilisateurs/:id', (req,res) => {
-    // Trouvez les id et gérer les erreurs 
     const parsedId = parseInt(req.params.id);
     const trouverId = users.find((user) => user.id === parsedId);
 
     if (isNaN(parsedId)) return res.status(400).send("Ce n'est pas un nombre");
-    if (!trouverId) return res.status(404).send("Erreur de Id");
-// Validaiton avec les erreurs 
+    if (!trouverId) return res.status(404).send("Erreur de Id"); 
     const schema = Joi.object({
         Nom: Joi.string().min(3).required()
     });
