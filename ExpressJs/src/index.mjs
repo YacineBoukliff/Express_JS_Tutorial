@@ -1,12 +1,23 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Spécifiez le chemin vers le dossier config
+process.env.NODE_CONFIG_DIR = path.join(__dirname, '..', 'config');
+
 import express from 'express';
 import Joi from "joi"
 import helmet from "helmet"
 import morgan from "morgan"
+import config from "config"
 import { log } from './logger.js';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 const app = express()
+
+console.log('Application Name : ' + config.get('name'))
+console.log('Mail serveur : ' + config.get('mail.host'))
 
 if(app.get('env') === 'development'){
     app.use(morgan("tiny"));
@@ -15,9 +26,6 @@ if(app.get('env') === 'development'){
 
 console.log("Environnement actuel :", app.get('env'));
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet())
@@ -25,7 +33,6 @@ app.use(morgan("tiny"));
 
 const publicPath = path.join(__dirname, '..', 'public');
 app.use(express.static(publicPath));
-
 
 app.use(log)
 
@@ -56,12 +63,14 @@ app.get("/api/utilisateurs", (req,res) => {
 
 app.get("/api/utilisateurs/:id",(req,res) => {
     const parsedId = parseInt(req.params.id)
- const trouverId = users.find((user) => user.id === parsedId)
 
- if(isNaN(parsedId)) return res.send( " Ce n'est pas un nombre ")
- if(!trouverId) return res.status(404).send("Erreur de Id")
- 
- res.send(trouverId)
+    const trouverId = users.find((user) => user.id === parsedId)
+
+    if(isNaN(parsedId)) return res.send( " Ce n'est pas un nombre ")
+
+    if(!trouverId) return res.status(404).send("Erreur de Id")
+
+    res.send(trouverId)
 })
 
 app.post('/api/utilisateurs', (req, res) => {
@@ -75,22 +84,22 @@ app.post('/api/utilisateurs', (req, res) => {
     if (validationResult.error) {
         return res.status(400).send("Rentrez un nom valide");
     }
-   
+
     const user = {
         id: users.length + 1,
-        nom: req.body.nom  
+        nom: req.body.nom
     };
     users.push(user);
     res.send(user);
 });
-
 
 app.put('/api/utilisateurs/:id', (req,res) => {
     const parsedId = parseInt(req.params.id);
     const trouverId = users.find((user) => user.id === parsedId);
 
     if (isNaN(parsedId)) return res.status(400).send("Ce n'est pas un nombre");
-    if (!trouverId) return res.status(404).send("Erreur de Id"); 
+    if (!trouverId) return res.status(404).send("Erreur de Id");
+
     const schema = Joi.object({
         Nom: Joi.string().min(3).required()
     });
@@ -101,11 +110,10 @@ app.put('/api/utilisateurs/:id', (req,res) => {
     if (validationResult.error) {
         return res.status(400).send("Rentrez un nom valide");
     }
-// Mettre a jour  
+    // Mettre a jour
     trouverId.Nom = req.body.Nom;
     res.send(trouverId);
 })
-
 
 app.delete('/api/utilisateurs/:id', (req,res) => {
     const parsedId = parseInt(req.params.id);
